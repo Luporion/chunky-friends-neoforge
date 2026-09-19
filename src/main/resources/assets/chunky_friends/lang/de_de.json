@@ -1,0 +1,15 @@
+{
+  "message.chunky_friends.not_ready": "Chunky Friends ist noch nicht vollständig gestartet. Versuche es gleich erneut.",
+  "message.chunky_friends.config.invalid_values": "Diese Chunky-Friends-Konfigurationswerte liegen außerhalb des erlaubten Bereichs.",
+  "message.chunky_friends.config.saved": "Chunky-Friends-Konfiguration aktualisiert.",
+  "message.chunky_friends.config.invalid_radius_format": "Radius konnte nicht gelesen werden. Nutze Blöcke (z. B. 8000) oder Chunks mit 'c' (z. B. 500c).",
+  "message.chunky_friends.reset": "Pregeneration-Ringfortschritt aller erfassten Spieler zurückgesetzt.",
+  "command.chunky_friends.config.current": "Ringanzahl: %s, maximaler Radius: %s Blöcke (%s Chunks), Kurve: %s",
+  "command.chunky_friends.status.active": "Aktive Pregeneration: %s — Ring %s/%s, %s%% fertig (%s Chunks, %s Chunks/s) in %s",
+  "command.chunky_friends.status.paused_suffix": " (pausiert, weil ein Spieler online ist)",
+  "command.chunky_friends.status.idle": "Aktuell läuft kein Chunky-Friends-Job. %s Spieler sind berechtigt.",
+  "command.chunky_friends.players.header": "%s berechtigte Spieler:",
+  "command.chunky_friends.players.entry": "%s — Ring %s/%s",
+  "command.chunky_friends.players.active_suffix": " (aktiv)",
+  "command.chunky_friends.players.none": "Aktuell ist kein Spieler berechtigt."
+}

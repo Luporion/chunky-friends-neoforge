@@ -1,0 +1,36 @@
+modLoader="javafml"
+loaderVersion="${loader_version_range}"
+license="${mod_license}"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+logoFile="chunky_friends.png"
+authors="ExodusOTH"
+credits="NeoForge 1.21.1 port based on the MIT-licensed Chunky Friends source."
+description='''
+Server-side Chunky scheduler that records player locations and pregenerates progressively larger areas around recently active players when the server is empty.
+NeoForge 1.21.1 port of Chunky Friends.
+'''
+
+[[dependencies.${mod_id}]]
+modId="neoforge"
+type="required"
+versionRange="${neo_version_range}"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="minecraft"
+type="required"
+versionRange="${minecraft_version_range}"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="chunky"
+type="required"
+versionRange="[${chunky_version},1.5)"
+ordering="AFTER"
+side="BOTH"

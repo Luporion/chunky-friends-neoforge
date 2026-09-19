@@ -1,117 +1,86 @@
 package com.onthehill.chunkyfriends;
 
-import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
-import net.fabricmc.loader.api.FabricLoader;
-
-import net.minecraft.resources.Identifier;
-import net.minecraft.server.MinecraftServer;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.onthehill.chunkyfriends.chunky.ChunkyGateway;
 import com.onthehill.chunkyfriends.command.ChunkyFriendsCommand;
 import com.onthehill.chunkyfriends.config.ChunkyFriendsConfig;
-import com.onthehill.chunkyfriends.network.ConfigNetworking;
 import com.onthehill.chunkyfriends.scheduler.PregenScheduler;
+import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.loading.FMLPaths;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/**
- * Common entrypoint for Chunky Friends. Wires server lifecycle and player connection events to the
- * presence-gated chunk pregeneration scheduler.
- */
-public class ChunkyFriends implements ModInitializer
-{
-    /**
-     * This mod's Fabric mod identifier.
-     */
-    public static final String MOD_ID = "chunky-friends";
+/** NeoForge 1.21.1 entry point for Chunky Friends. */
+@Mod(ChunkyFriends.MOD_ID)
+public final class ChunkyFriends {
+    /** NeoForge mod ids may not contain hyphens, unlike the original Fabric id. */
+    public static final String MOD_ID = "chunky_friends";
+    public static final Logger LOGGER = LoggerFactory.getLogger("Chunky Friends");
 
-    /**
-     * Logger for this mod, named after {@link #MOD_ID} so log lines are attributable at a glance.
-     */
-    public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+    private ChunkyFriendsConfig config;
+    private PregenScheduler pregenScheduler;
 
-    private ChunkyFriendsConfig _config;
-    private PregenScheduler _pregenScheduler;
-
-    /**
-     * Registers server lifecycle and player connection listeners that drive the pregeneration scheduler,
-     * the network protocol backing the client-side configuration GUI, and its command-line equivalent.
-     *
-     * @implNote The {@code main} entrypoint this class implements runs on every physical install of the mod —
-     *     a dedicated server, an integrated (singleplayer/LAN) server, <em>and</em> a pure client that only
-     *     ever joins someone else's remote server. Loading/writing {@link #_config} and constructing
-     *     {@link #_pregenScheduler} are deliberately deferred to {@code ServerLifecycleEvents.SERVER_STARTED}
-     *     — which only fires when a real {@link MinecraftServer} actually starts — rather than done eagerly
-     *     here, so a pure remote-joining client never touches disk or spins up scheduling machinery it will
-     *     never use. The command tree below is registered here at mod-init time regardless (registering it is
-     *     itself inert without a server), but reads {@link #_config} through a supplier rather than capturing
-     *     it directly, since Minecraft builds the command dispatcher before {@code SERVER_STARTED} fires —
-     *     capturing the field's value at registration time would have permanently baked in {@code null}.
-     *     {@link ConfigNetworking#registerPayloadTypes()}, by contrast, is called unconditionally right here,
-     *     not deferred — payload <em>type</em> registration has no dependency on {@link #_config} and must
-     *     happen on every physical side regardless of whether a server ever starts, since the client's own
-     *     mod-init path registers a receiver for one of these types before any server could exist.
-     */
-    @Override
-    public void onInitialize()
-    {
-        ConfigNetworking.registerPayloadTypes();
-        ServerLifecycleEvents.SERVER_STARTED.register(this::initializeForServer);
-        ServerLifecycleEvents.SERVER_STOPPING.register(server ->
-        {
-            if (_pregenScheduler != null)
-            {
-                _pregenScheduler.shutdown(server);
-            }
-        });
-        ServerPlayConnectionEvents.JOIN.register((listener, sender, server) ->
-        {
-            if (_pregenScheduler != null)
-            {
-                _pregenScheduler.onPlayerJoin(listener.getPlayer());
-            }
-        });
-        ServerPlayConnectionEvents.DISCONNECT.register((listener, server) ->
-        {
-            if (_pregenScheduler != null)
-            {
-                _pregenScheduler.onPlayerDisconnect(listener.getPlayer());
-            }
-        });
-        CommandRegistrationCallback.EVENT.register((dispatcher, buildContext, selection) -> ChunkyFriendsCommand.register(dispatcher, () -> _config, () -> _pregenScheduler, this::onCurveConfigChanged));
+    public ChunkyFriends() {
+        final var bus = NeoForge.EVENT_BUS;
+        bus.addListener(this::onServerStarted);
+        bus.addListener(this::onServerStopping);
+        bus.addListener(this::onPlayerLoggedIn);
+        bus.addListener(this::onPlayerLoggedOut);
+        bus.addListener(this::onServerTick);
+        bus.addListener(this::onRegisterCommands);
     }
 
-    private void initializeForServer(final MinecraftServer server)
-    {
-        if (_config == null)
-        {
-            _config = ChunkyFriendsConfig.load(FabricLoader.getInstance().getConfigDir().resolve("chunky-friends.json"));
-            _pregenScheduler = new PregenScheduler(new ChunkyGateway(), _config);
-            ConfigNetworking.registerServerReceivers(_config, _pregenScheduler, this::onCurveConfigChanged);
+    private void onServerStarted(final ServerStartedEvent event) {
+        // Recreate per server instance. This also makes integrated-server stop/start cycles safe.
+        config = ChunkyFriendsConfig.load(FMLPaths.CONFIGDIR.get().resolve("chunky-friends.json"));
+        pregenScheduler = new PregenScheduler(new ChunkyGateway(), config);
+        pregenScheduler.init(event.getServer());
+        LOGGER.info("Chunky Friends NeoForge port initialized for Minecraft 1.21.1.");
+    }
+
+    private void onServerStopping(final ServerStoppingEvent event) {
+        if (pregenScheduler != null) {
+            pregenScheduler.shutdown(event.getServer());
         }
-        _pregenScheduler.init(server);
+        pregenScheduler = null;
+        config = null;
     }
 
-    private void onCurveConfigChanged()
-    {
-        if (_pregenScheduler != null)
-        {
-            _pregenScheduler.resetAllProgress();
+    private void onPlayerLoggedIn(final PlayerEvent.PlayerLoggedInEvent event) {
+        if (pregenScheduler != null && event.getEntity() instanceof ServerPlayer player) {
+            pregenScheduler.onPlayerJoin(player);
         }
     }
 
-    /**
-     * Builds a namespaced identifier under this mod's namespace.
-     *
-     * @param path The identifier's path.
-     * @return An identifier of the form {@code chunky-friends:<path>}.
-     */
-    public static Identifier id(final String path)
-    {
-        return Identifier.fromNamespaceAndPath(MOD_ID, path);
+    private void onPlayerLoggedOut(final PlayerEvent.PlayerLoggedOutEvent event) {
+        if (pregenScheduler != null && event.getEntity() instanceof ServerPlayer player) {
+            pregenScheduler.onPlayerDisconnect(player);
+        }
+    }
+
+    private void onServerTick(final ServerTickEvent.Post event) {
+        if (pregenScheduler != null) {
+            pregenScheduler.onServerTick(event.getServer());
+        }
+    }
+
+    private void onRegisterCommands(final RegisterCommandsEvent event) {
+        ChunkyFriendsCommand.register(
+                event.getDispatcher(),
+                () -> config,
+                () -> pregenScheduler,
+                this::onCurveConfigChanged);
+    }
+
+    private void onCurveConfigChanged() {
+        if (pregenScheduler != null) {
+            pregenScheduler.resetAllProgress();
+        }
     }
 }

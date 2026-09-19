@@ -107,6 +107,6 @@ public final class PlayerStateStore
 
     private static Path resolvePath(final MinecraftServer server)
     {
-        return server.getWorldPath(LevelResource.DATA).resolve(STATE_FILE_NAME);
+        return server.getWorldPath(LevelResource.ROOT).resolve("data").resolve(STATE_FILE_NAME);
     }
 }

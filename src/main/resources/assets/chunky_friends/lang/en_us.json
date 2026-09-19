@@ -1,0 +1,15 @@
+{
+  "message.chunky_friends.not_ready": "Chunky Friends has not finished starting yet. Try again in a moment.",
+  "message.chunky_friends.config.invalid_values": "Those Chunky Friends configuration values are out of range.",
+  "message.chunky_friends.config.saved": "Chunky Friends configuration updated.",
+  "message.chunky_friends.config.invalid_radius_format": "Couldn't parse that radius. Use blocks (e.g. 8000) or chunks with 'c' (e.g. 500c).",
+  "message.chunky_friends.reset": "Reset all tracked pregeneration ring progress.",
+  "command.chunky_friends.config.current": "Ring count: %s, max radius: %s blocks (%s chunks), curve: %s",
+  "command.chunky_friends.status.active": "Active pregeneration: %s — ring %s/%s, %s%% complete (%s chunks, %s chunks/s) in %s",
+  "command.chunky_friends.status.paused_suffix": " (paused because a player is online)",
+  "command.chunky_friends.status.idle": "No Chunky Friends pregeneration job is active. %s player(s) are eligible.",
+  "command.chunky_friends.players.header": "%s eligible player(s):",
+  "command.chunky_friends.players.entry": "%s — ring %s/%s",
+  "command.chunky_friends.players.active_suffix": " (active)",
+  "command.chunky_friends.players.none": "No players are currently eligible."
+}

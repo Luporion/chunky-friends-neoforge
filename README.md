@@ -80,8 +80,9 @@ Changing ring count, max radius or curve resets Chunky Friends' *heuristic tier 
 regenerate existing terrain: Chunky remains the source of truth and skips chunks it already generated.
 
 
-> NeoForge 1.21.1 port build revision: `1.1.2+mc1.21.1-neoforge.4`. The `.4` hotfix adds the
-> Gson/SLF4J libraries needed only by the standalone JUnit test runtime; they are not packaged into the mod JAR.
+> Current NeoForge 1.21.1 release: `1.1.2+mc1.21.1-neoforge`.
+> Gson/SLF4J dependencies are used only by the standalone JUnit test runtime;
+> they are not packaged into the mod JAR.
 
 ## Build
 
